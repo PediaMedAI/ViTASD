@@ -1,6 +1,6 @@
-# ViTASD: Simple Vision Transformer Baselines for Autism Spectrum Disorder Detection
-# Official PyTorch Implementation
-
+# ViTASD: Vision Transformer Baselines for Autism Spectrum Disorder Detection
+## Shenzhen Children's Hospital AI Lab
+## Official PyTorch Implementation
 
 ## Dataset  
 
@@ -11,4 +11,11 @@ Here is data used for training our model:
 [Google Drive](https://drive.google.com/drive/folders/1c4OX_HbfCjljXEQUyWWbXbaoKM-bh-m9?usp=sharing)    
 
 
-## Model  
+## Model    
+pending
+
+## Training    
+pending
+
+## Evaluation   
+pending

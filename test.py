@@ -1,6 +1,7 @@
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
+from collections import OrderedDict
 
 from datasets import AutismDatasetModule
 from models import ViTASD
@@ -28,12 +29,12 @@ class ViTASDLM(LightningModule):
                  batch_size: int = 256,
                  num_classes: int = 2,
                  epochs: int = 200,
-                 attn_only: bool = False,
+                 attn_only: bool = True,
                  smoothing: float = 0.0,  # Label smoothing
                  vis_path: str = "./runs/vis",
 
                  # Model parameters
-                 model: str = "deit3_large_patch16_224",  # Name of model to train
+                 model: str = "deit3_base_patch16_224",  # Name of model to train
                  input_size: int = 224,  # images input size
                  drop: float = 0.0,  # Dropout rate
                  drop_path: float = 0.05,  # Drop path rate
@@ -44,9 +45,9 @@ class ViTASDLM(LightningModule):
 
                  # Learning rate schedule parameters
                  sched: str = "cosine",
-                 lr: float = 5e-4,
+                 lr: float = 4e-3,
                  warmup_lr: float = 1e-6,
-                 min_lr: float = 1e-6,
+                 min_lr: float = 1e-5,
                  warmup_epochs: int = 5,  # epochs to warmup LR, if scheduler supports
                  cooldown_epochs: int = 0,  # epochs to cooldown LR at min_lr, after cyclic schedule ends
 
@@ -70,6 +71,15 @@ class ViTASDLM(LightningModule):
             drop_block_rate=None,
             img_size=self.hparams.input_size
         )
+
+        state_dict = torch.load("/home/xucao/ASD/ViTASD/lightning_logs/ViTASD/version_1/checkpoints/epoch=14-step=1185.ckpt")["state_dict"]
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            name = k[0:5]
+            if name == "model":
+                new_state_dict[k[6:]] = v
+
+        self.model.load_state_dict(new_state_dict)
 
         self._init_mixup()
         self._init_frozen_params()

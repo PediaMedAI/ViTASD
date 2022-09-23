@@ -1,6 +1,6 @@
 # ViTASD: Vision Transformer Baselines for Autism Spectrum Disorder Detection
-## Shenzhen Children's Hospital AI Lab
-## Official PyTorch Implementation
+Shenzhen Children's Hospital AI Lab
+### Official PyTorch Implementation
 
 ## Dataset  
 

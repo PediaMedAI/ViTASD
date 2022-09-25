@@ -1,3 +1,7 @@
+# import os
+# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+# os.environ["CUDA_VISIBLE_DEVICES"] = "1, 2, 3"
+
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -27,13 +31,13 @@ class ViTASDLM(LightningModule):
     def __init__(self,
                  batch_size: int = 256,
                  num_classes: int = 2,
-                 epochs: int = 200,
+                 epochs: int = 300,
                  attn_only: bool = False,
                  smoothing: float = 0.0,  # Label smoothing
                  vis_path: str = "./runs/vis",
 
                  # Model parameters
-                 model: str = "deit3_large_patch16_224",  # Name of model to train
+                 model: str = "deit3_base_patch16_224",  # Name of model to train
                  input_size: int = 224,  # images input size
                  drop: float = 0.0,  # Dropout rate
                  drop_path: float = 0.05,  # Drop path rate
@@ -44,7 +48,7 @@ class ViTASDLM(LightningModule):
 
                  # Learning rate schedule parameters
                  sched: str = "cosine",
-                 lr: float = 5e-4,
+                 lr: float = 1e-4,
                  warmup_lr: float = 1e-6,
                  min_lr: float = 1e-6,
                  warmup_epochs: int = 5,  # epochs to warmup LR, if scheduler supports
@@ -118,6 +122,7 @@ class ViTASDLM(LightningModule):
         loss = self.train_criterion(outputs, targets)
         loss_value = loss.item()
         self.log('Loss/train', loss_value, sync_dist=True)
+        
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
@@ -129,7 +134,7 @@ class ViTASDLM(LightningModule):
         self.log("Accuracy/val", self.valid_acc, on_step=True, on_epoch=True, sync_dist=True)
         self.log("Loss/val", loss_value, sync_dist=True)
 
-        return loss
+        return self.valid_acc
 
 
     def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:

@@ -1,29 +1,46 @@
-# pytorch_lightning==1.7.5
+# pytorch_lightning==1.7.7
 seed_everything: 42
 trainer:
-  logger: 
+  logger:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
       save_dir: ./lightning_logs
-      name: ViTASD-B
-      version: 3
+      name: ViTASD-L
+      version: 1
+      log_graph: false
       default_hp_metric: false
+      prefix: ''
+      sub_dir: null
+      agg_key_funcs: null
+      agg_default_func: null
+      comment: ''
+      purge_step: null
+      max_queue: 10
+      flush_secs: 120
+      filename_suffix: ''
   enable_checkpointing: true
   callbacks:
     class_path: pytorch_lightning.callbacks.ModelCheckpoint
     init_args:
-      dirpath: ./lightning_logs/ViTASD-B
-      save_top_k: 3
+      dirpath: ./lightning_logs/ViTASD-L
+      filename: null
       monitor: Accuracy/val
-      mode: max
+      verbose: false
+      save_last: null
+      save_top_k: 1
       save_weights_only: true
+      mode: max
       auto_insert_metric_name: true
+      every_n_train_steps: null
+      train_time_interval: null
+      every_n_epochs: null
+      save_on_train_epoch_end: null
   default_root_dir: null
   gradient_clip_val: null
   gradient_clip_algorithm: null
   num_nodes: 1
   num_processes: null
-  devices: 4
+  devices: 2
   gpus: null
   auto_select_gpus: false
   tpu_cores: null
@@ -34,7 +51,7 @@ trainer:
   check_val_every_n_epoch: 1
   fast_dev_run: false
   accumulate_grad_batches: null
-  max_epochs: &epochs 300
+  max_epochs: 300
   min_epochs: null
   max_steps: -1
   min_steps: null
@@ -67,8 +84,16 @@ trainer:
   move_metrics_to_cpu: false
   multiple_trainloader_mode: max_size_cycle
 model:
+  batch_size: 16
   num_classes: 2
+  epochs: 300
   attn_only: false
+  smoothing: 0.0
+  vis_path: ./runs/vis
+  model: deit3_large_patch16_224
+  input_size: 224
+  drop: 0.0
+  drop_path: 0.05
   opt: adamw
   weight_decay: 0.05
   sched: cosine
@@ -77,13 +102,17 @@ model:
   min_lr: 1.0e-06
   warmup_epochs: 5
   cooldown_epochs: 0
-  smoothing: 0.0
-  batch_size: &bs 16
-  model: deit3_base_patch16_224
   mixup: 0.8
   cutmix: 1.0
+  mixup_prob: 1.0
+  mixup_switch_prob: 0.5
+  mixup_mode: batch
 data:
-  batch_size: *bs
+  batch_size: 16
   num_workers: 4
+  data_root: /home/xucao/ASD/datasets/Kaggle_AutismDataset2
+  input_size: 224
+  color_jitter: 0.3
   three_augment: false
+  src: false
 ckpt_path: null

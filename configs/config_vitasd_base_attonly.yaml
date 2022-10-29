@@ -6,7 +6,7 @@ trainer:
     init_args:
       save_dir: ./lightning_logs
       name: ViTASD-B
-      version: 3
+      version: 1
       default_hp_metric: false
   enable_checkpointing: true
   callbacks:
@@ -68,7 +68,7 @@ trainer:
   multiple_trainloader_mode: max_size_cycle
 model:
   num_classes: 2
-  attn_only: false
+  attn_only: true
   opt: adamw
   weight_decay: 0.05
   sched: cosine

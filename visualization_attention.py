@@ -67,18 +67,18 @@ def main(hparams):
     dataset: ImageDataset = loader.dataset
     attn_maps = []
     for i in range(hparams['num_layers']):
-        attn_layer: torch.nn.Module = model.model.blocks[i].attn
+        attn_layer: torch.nn.Module = model.model.backbone.blocks[i].attn
         forward_fn = functools.partial(forward, attn_maps=attn_maps)
         attn_layer.forward = types.MethodType(forward_fn, attn_layer)
 
-    image_path = 'Autistic/att_input.jpg'
+    image_path = 'imgs/Non_Autistic/011.jpg'
 
     it = iter(loader)
     for image_idx in tqdm(range(len(dataset))):
         data_item = next(it)
         cur_path = str(dataset.filename(image_idx, absolute=False)).strip()
         if cur_path == image_path:
-            cls, number = cur_path.split('/')
+            _, cls, number = cur_path.split('/')
             number = number.split('.')[0]
             output_path = hparams['output_root'] / image_path.split('.')[0]
             # if not output_path.exists():
@@ -110,7 +110,7 @@ def main(hparams):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--output_root', type=str, default=r"/home/xucao/ASD/ViTASD/runs")
-    parser.add_argument('--ckpt_path', type=str, default=r"/home/xucao/ASD/ViTASD/lightning_logs/ViTASD-B/epoch=185-step=7626.ckpt")
+    parser.add_argument('--ckpt_path', type=str, default=r"/home/xucao/ASD/ViTASD/lightning_logs/ViTASD-B/epoch=65-step=2574.ckpt")
     parser.add_argument('--data_root', type=str, default=r"/home/xucao/ASD/ViTASD/runs/attention_vis")
     parser.add_argument('--num_layers', type=int, default=12)
     args = vars(parser.parse_args())

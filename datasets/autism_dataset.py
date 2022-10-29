@@ -14,15 +14,15 @@ class AutismDatasetModule(LightningDataModule):
     def __init__(self,
                  batch_size: int = 256,
                  num_workers: int = 4,
-                 data_root: str = "/home/xucao/ASD/AutismDataset",
+                 data_root: str = "/home/xucao/ASD/datasets/Kaggle_AutismDataset2",
                  input_size: int = 224,
                  color_jitter: float = 0.3,
-                 three_augment: bool = False,
+                 three_augment: bool = True,
                  src: bool = False,  # simple random crop
                  ):
         super(AutismDatasetModule, self).__init__()
         self.save_hyperparameters()
-        self.data_path = Path(self.hparams.data_root) / "imgs"
+        self.data_path = Path(self.hparams.data_root)
         self.train_transforms = self.build_transform(is_train=True)
         self.eval_transforms = self.build_transform(is_train=False)
         if self.hparams.three_augment:
@@ -80,6 +80,18 @@ class AutismDatasetModule(LightningDataModule):
         return DataLoader(test_dataset,
                           sampler=test_sampler,
                           batch_size=4,
+                          num_workers=self.hparams.num_workers,
+                          pin_memory=True,
+                          persistent_workers=True,
+                          drop_last=False)
+    
+    def predict_dataloader(self) -> EVAL_DATALOADERS:
+        test_dataset = ImageDataset(str(self.data_path), transform=self.eval_transforms,
+                                   class_map=self.class_map)
+        test_sampler = SequentialSampler(test_dataset)
+        return DataLoader(test_dataset,
+                          sampler=test_sampler,
+                          batch_size=1,
                           num_workers=self.hparams.num_workers,
                           pin_memory=True,
                           persistent_workers=True,

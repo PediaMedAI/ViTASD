@@ -1,20 +1,17 @@
-# import os
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1, 2, 3"
-
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from datasets import AutismDatasetModule
 from models import ViTASD
+from lib.pos_embed import interpolate_pos_embed
 
 from pytorch_lightning import LightningModule
 from pytorch_lightning.cli import LightningCLI
 from pytorch_lightning.utilities.types import STEP_OUTPUT, EPOCH_OUTPUT
 from pytorch_lightning.callbacks import Callback
 
-from torchmetrics import Accuracy, ConfusionMatrix
+from torchmetrics import Accuracy, ConfusionMatrix, AUROC
 from torch.optim import Optimizer
 
 from timm.data import Mixup
@@ -41,6 +38,7 @@ class ViTASDLM(LightningModule):
                  input_size: int = 224,  # images input size
                  drop: float = 0.0,  # Dropout rate
                  drop_path: float = 0.05,  # Drop path rate
+                 pretrain_path: str = ""
 
                  # Optimizer parameters
                  opt: str = "adamw",
@@ -65,21 +63,23 @@ class ViTASDLM(LightningModule):
         super(ViTASDLM, self).__init__()
         self.save_hyperparameters()
 
-        self.model: torch.nn.Module = create_model(
+        self.model: torch.nn.Module = ViTASD(
             self.hparams.model,
-            pretrained=True,
             num_classes=self.hparams.num_classes,
             drop_rate=self.hparams.drop,
             drop_path_rate=self.hparams.drop_path,
-            drop_block_rate=None,
-            img_size=self.hparams.input_size
+            input_size=self.hparams.input_size
         )
+        
+        if os.path.exists(pretrain_path):
+            self._load_pretrained(pretrain_path)
 
         self._init_mixup()
         self._init_frozen_params()
         self.train_criterion = torch.nn.CrossEntropyLoss()
         self.valid_criterion = torch.nn.CrossEntropyLoss()
         self.valid_acc = Accuracy()
+        self.auroc = AUROC(num_classes=2)
         self.confusion_matrix = ConfusionMatrix(num_classes=self.hparams.num_classes, normalize='true')
 
     def _init_mixup(self):
@@ -96,6 +96,20 @@ class ViTASDLM(LightningModule):
                 label_smoothing=self.hparams.smoothing,
                 num_classes=self.hparams.num_classes
             )
+    
+    def _load_pretrained(self, pretrain_path):
+        checkpoint = torch.load(pretrain_path)
+        print("Load pre-trained checkpoint from: %s" % pretrain_path)
+        checkpoint_model = checkpoint['state_dict']
+        state_dict = self.model.state_dict()
+        for k in ['backbone.head.weight', 'backbone.head.bias']:
+            if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
+                print(f"Removing key {k} from pretrained checkpoint")
+                del checkpoint_model[k]
+        # interpolate position embedding
+        interpolate_pos_embed(self.model, checkpoint_model)
+        self.model.load_state_dict(checkpoint_model, strict=False)
+        
 
     def _init_frozen_params(self):
         if self.hparams.attn_only:
@@ -105,10 +119,10 @@ class ViTASDLM(LightningModule):
                 else:
                     p.requires_grad = False
 
-            self.model.head.weight.requires_grad = True
-            self.model.head.bias.requires_grad = True
-            self.model.pos_embed.requires_grad = True
-            for p in self.model.patch_embed.parameters():
+            self.model.backbone.head.weight.requires_grad = True
+            self.model.backbone.head.bias.requires_grad = True
+            self.model.backbone.pos_embed.requires_grad = True
+            for p in self.model.backbone.patch_embed.parameters():
                 p.requires_grad = True
 
     def forward(self, x):
@@ -122,7 +136,6 @@ class ViTASDLM(LightningModule):
         loss = self.train_criterion(outputs, targets)
         loss_value = loss.item()
         self.log('Loss/train', loss_value, sync_dist=True)
-        
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
@@ -132,10 +145,10 @@ class ViTASDLM(LightningModule):
         loss_value = loss.item()
         self.valid_acc.update(outputs, targets)
         self.log("Accuracy/val", self.valid_acc, on_step=True, on_epoch=True, sync_dist=True)
+        # self.log("AUROC/val", self.auroc(outputs, targets), on_epoch=True, sync_dist=True)
         self.log("Loss/val", loss_value, sync_dist=True)
-
         return self.valid_acc
-
+    
 
     def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
         samples, targets = batch

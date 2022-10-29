@@ -1,4 +1,3 @@
-from models.ViTASD import ViTASD
-from models.ViTASD_SNGP import ViTASD_SNGP
+from models.vitasd import ViTASD
 
-__all__ = ['ViTASD', 'ViTASD_SNGP']
+__all__ = ['ViTASD']

@@ -5,14 +5,14 @@ trainer:
     class_path: pytorch_lightning.loggers.TensorBoardLogger
     init_args:
       save_dir: ./lightning_logs
-      name: ViTASD-B
+      name: ViTASD-S
       version: 1
       default_hp_metric: false
   enable_checkpointing: true
   callbacks:
     class_path: pytorch_lightning.callbacks.ModelCheckpoint
     init_args:
-      dirpath: ./lightning_logs/ViTASD-B
+      dirpath: ./lightning_logs/ViTASD-S
       save_top_k: 1
       monitor: Accuracy/val
       mode: max
@@ -70,13 +70,13 @@ model:
   opt: adamw
   weight_decay: 0.05
   sched: cosine
-  lr: 0.0001
+  lr: 1.0e-05
   warmup_lr: 1.0e-06
-  min_lr: 1.0e-05
+  min_lr: 1.0e-06
   warmup_epochs: 5
   cooldown_epochs: 0
   batch_size: &bs 16
-  model: deit3_base_patch16_224
+  model: deit3_small_patch16_224
   mixup: 0.8
   cutmix: 1.0
 data:

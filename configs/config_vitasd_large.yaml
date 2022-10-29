@@ -6,14 +6,14 @@ trainer:
     init_args:
       save_dir: ./lightning_logs
       name: ViTASD-L
-      version: 1
+      version: 3
       default_hp_metric: false
   enable_checkpointing: true
   callbacks:
     class_path: pytorch_lightning.callbacks.ModelCheckpoint
     init_args:
       dirpath: ./lightning_logs/ViTASD-L
-      save_top_k: 1
+      save_top_k: 3
       monitor: Accuracy/val
       mode: max
       save_weights_only: true
@@ -23,7 +23,7 @@ trainer:
   gradient_clip_algorithm: null
   num_nodes: 1
   num_processes: null
-  devices: 2
+  devices: 4
   gpus: null
   auto_select_gpus: false
   tpu_cores: null
@@ -70,9 +70,9 @@ model:
   opt: adamw
   weight_decay: 0.05
   sched: cosine
-  lr: 0.0001
+  lr: 1.0e-05
   warmup_lr: 1.0e-06
-  min_lr: 1.0e-05
+  min_lr: 1.0e-06
   warmup_epochs: 5
   cooldown_epochs: 0
   batch_size: &bs 16

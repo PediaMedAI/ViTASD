@@ -121,9 +121,7 @@ class Laplace(nn.Module):
             f_reduc = self.normalize(f_reduc)
 
         k = self.rff(f_reduc)
-
         pred = self.beta(k)
-
         self.training = True
 
         if self.training:

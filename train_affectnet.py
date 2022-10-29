@@ -1,10 +1,9 @@
 import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
-from collections import OrderedDict
 
-from datasets import AutismDatasetModule
-from models import ViTASD
+from datasets import AffectNetDataModule
+from models import ViTASD, ResNetASD
 
 from pytorch_lightning import LightningModule
 from pytorch_lightning.cli import LightningCLI
@@ -27,9 +26,9 @@ from typing import Optional
 class ViTASDLM(LightningModule):
     def __init__(self,
                  batch_size: int = 256,
-                 num_classes: int = 2,
-                 epochs: int = 200,
-                 attn_only: bool = True,
+                 num_classes: int = 8,
+                 epochs: int = 100,
+                 attn_only: bool = False,
                  smoothing: float = 0.0,  # Label smoothing
                  vis_path: str = "./runs/vis",
 
@@ -38,6 +37,7 @@ class ViTASDLM(LightningModule):
                  input_size: int = 224,  # images input size
                  drop: float = 0.0,  # Dropout rate
                  drop_path: float = 0.05,  # Drop path rate
+                 pretrain_path: str = ""
 
                  # Optimizer parameters
                  opt: str = "adamw",
@@ -45,9 +45,9 @@ class ViTASDLM(LightningModule):
 
                  # Learning rate schedule parameters
                  sched: str = "cosine",
-                 lr: float = 4e-3,
+                 lr: float = 1e-4,
                  warmup_lr: float = 1e-6,
-                 min_lr: float = 1e-5,
+                 min_lr: float = 1e-6,
                  warmup_epochs: int = 5,  # epochs to warmup LR, if scheduler supports
                  cooldown_epochs: int = 0,  # epochs to cooldown LR at min_lr, after cyclic schedule ends
 
@@ -62,24 +62,21 @@ class ViTASDLM(LightningModule):
         super(ViTASDLM, self).__init__()
         self.save_hyperparameters()
 
-        self.model: torch.nn.Module = create_model(
+        # self.model: torch.nn.Module = ViTASD(
+        #     self.hparams.model,
+        #     num_classes=self.hparams.num_classes,
+        #     drop_rate=self.hparams.drop,
+        #     drop_path_rate=self.hparams.drop_path,
+        #     input_size=self.hparams.input_size
+        # )
+        self.model: torch.nn.Module = ResNetASD(
             self.hparams.model,
-            pretrained=True,
             num_classes=self.hparams.num_classes,
             drop_rate=self.hparams.drop,
             drop_path_rate=self.hparams.drop_path,
-            drop_block_rate=None,
-            img_size=self.hparams.input_size
+            input_size=self.hparams.input_size
         )
-
-        state_dict = torch.load("/home/xucao/ASD/ViTASD/lightning_logs/ViTASD-B/best_model_vitasd_base-v1.ckpt")["state_dict"]
-        new_state_dict = OrderedDict()
-        for k, v in state_dict.items():
-            name = k[0:5]
-            if name == "model":
-                new_state_dict[k[6:]] = v
-
-        self.model.load_state_dict(new_state_dict)
+        
 
         self._init_mixup()
         self._init_frozen_params()
@@ -111,10 +108,10 @@ class ViTASDLM(LightningModule):
                 else:
                     p.requires_grad = False
 
-            self.model.head.weight.requires_grad = True
-            self.model.head.bias.requires_grad = True
-            self.model.pos_embed.requires_grad = True
-            for p in self.model.patch_embed.parameters():
+            self.model.backbone.head.weight.requires_grad = True
+            self.model.backbone.head.bias.requires_grad = True
+            self.model.backbone.pos_embed.requires_grad = True
+            for p in self.model.backbone.patch_embed.parameters():
                 p.requires_grad = True
 
     def forward(self, x):
@@ -128,6 +125,7 @@ class ViTASDLM(LightningModule):
         loss = self.train_criterion(outputs, targets)
         loss_value = loss.item()
         self.log('Loss/train', loss_value, sync_dist=True)
+        
         return loss
 
     def validation_step(self, batch, batch_idx) -> STEP_OUTPUT:
@@ -139,7 +137,7 @@ class ViTASDLM(LightningModule):
         self.log("Accuracy/val", self.valid_acc, on_step=True, on_epoch=True, sync_dist=True)
         self.log("Loss/val", loss_value, sync_dist=True)
 
-        return loss
+        return self.valid_acc
 
 
     def test_step(self, batch, batch_idx) -> Optional[STEP_OUTPUT]:
@@ -180,7 +178,7 @@ class ViTASDLM(LightningModule):
 
 def cli_main():
     cli = LightningCLI(ViTASDLM,
-                       AutismDatasetModule,
+                       AffectNetDataModule,
                        seed_everything_default=42,
                        trainer_defaults=dict(accelerator='gpu', devices=1),
                        save_config_overwrite=True,

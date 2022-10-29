@@ -14,7 +14,7 @@ class AffectNetDataModule(LightningDataModule):
     def __init__(self,
                  batch_size: int = 256,
                  num_workers: int = 4,
-                 data_root: str = "/home/xucao/ASD/AffectNet",
+                 data_root: str = "",
                  input_size: int = 224,
                  color_jitter: float = 0.3,
                  three_augment: bool = True,

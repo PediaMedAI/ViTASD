@@ -14,7 +14,7 @@ class AutismDatasetModule(LightningDataModule):
     def __init__(self,
                  batch_size: int = 256,
                  num_workers: int = 4,
-                 data_root: str = "/home/xucao/ASD/datasets/Kaggle_AutismDataset2",
+                 data_root: str = "./datasets/Kaggle_AutismDataset2",
                  input_size: int = 224,
                  color_jitter: float = 0.3,
                  three_augment: bool = True,

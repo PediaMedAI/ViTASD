@@ -109,9 +109,9 @@ def main(hparams):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output_root', type=str, default=r"/home/xucao/ASD/ViTASD/runs")
-    parser.add_argument('--ckpt_path', type=str, default=r"/home/xucao/ASD/ViTASD/lightning_logs/ViTASD-B/epoch=65-step=2574.ckpt")
-    parser.add_argument('--data_root', type=str, default=r"/home/xucao/ASD/ViTASD/runs/attention_vis")
+    parser.add_argument('--output_root', type=str, default=r"")
+    parser.add_argument('--ckpt_path', type=str, default=r"")
+    parser.add_argument('--data_root', type=str, default=r"")
     parser.add_argument('--num_layers', type=int, default=12)
     args = vars(parser.parse_args())
     main(args)

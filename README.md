@@ -1,4 +1,4 @@
-# ViTASD: Robust Vision Transformer Baselines for Autism Spectrum Disorder Facial Diagnosis
+# [ICASSP 2023] ViTASD: Robust Vision Transformer Baselines for Autism Spectrum Disorder Facial Diagnosis
 ### Official PyTorch Implementation
 Shenzhen Children's Hospital    
 New York University    
